@@ -14,13 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      dreams: {
+        Row: {
+          analysis_advice: string | null
+          analysis_emotion: string | null
+          analysis_summary: string | null
+          analysis_symbols: string | null
+          content: string
+          created_at: string
+          event: string | null
+          id: string
+          mood_x: number | null
+          mood_y: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          analysis_advice?: string | null
+          analysis_emotion?: string | null
+          analysis_summary?: string | null
+          analysis_symbols?: string | null
+          content: string
+          created_at?: string
+          event?: string | null
+          id?: string
+          mood_x?: number | null
+          mood_y?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          analysis_advice?: string | null
+          analysis_emotion?: string | null
+          analysis_summary?: string | null
+          analysis_symbols?: string | null
+          content?: string
+          created_at?: string
+          event?: string | null
+          id?: string
+          mood_x?: number | null
+          mood_y?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_owner_of_dream: { Args: { dream_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
