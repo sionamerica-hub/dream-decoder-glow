@@ -10,6 +10,7 @@ import { SummaryCard } from "@/components/SummaryCard";
 import { GlowCard } from "@/components/ui/GlowCard";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useDreamAnalysis } from "@/hooks/useDreamAnalysis";
 
 type Tab = "home" | "record" | "reports" | "profile";
 type RecordStep = "dream" | "events" | "mood" | "analyzing" | "result";
@@ -20,6 +21,8 @@ const Index = () => {
   const [dreamText, setDreamText] = useState("");
   const [selectedEvents, setSelectedEvents] = useState<string[]>([]);
   const [moodPosition, setMoodPosition] = useState({ x: 50, y: 50 });
+  
+  const { analyzeDream, isLoading: isAnalyzing, result: analysisResult, reset: resetAnalysis } = useDreamAnalysis();
 
   const handleDreamSubmit = (text: string) => {
     setDreamText(text);
@@ -30,12 +33,21 @@ const Index = () => {
     setRecordStep("mood");
   };
 
-  const handleMoodNext = () => {
+  const handleMoodNext = async () => {
     setRecordStep("analyzing");
-    // Simulate analysis
-    setTimeout(() => {
+    
+    const result = await analyzeDream({
+      dreamContent: dreamText,
+      events: selectedEvents,
+      mood: moodPosition,
+    });
+    
+    if (result) {
       setRecordStep("result");
-    }, 2500);
+    } else {
+      // On error, go back to dream input
+      setRecordStep("dream");
+    }
   };
 
   const resetRecord = () => {
@@ -43,6 +55,7 @@ const Index = () => {
     setDreamText("");
     setSelectedEvents([]);
     setMoodPosition({ x: 50, y: 50 });
+    resetAnalysis();
   };
 
   const renderHomeTab = () => (
@@ -219,7 +232,7 @@ const Index = () => {
         </div>
       )}
 
-      {recordStep === "result" && (
+      {recordStep === "result" && analysisResult && (
         <div className="space-y-6">
           <div className="text-center">
             <h2 className="font-display text-2xl font-bold mb-2">
@@ -229,7 +242,12 @@ const Index = () => {
               당신의 꿈이 말하는 것들
             </p>
           </div>
-          <AnalysisReport />
+          <AnalysisReport 
+            summary={analysisResult.summary}
+            symbols={analysisResult.symbols}
+            emotionConnection={analysisResult.emotionConnection}
+            advice={analysisResult.advice}
+          />
           <Button
             onClick={resetRecord}
             variant="outline"
