@@ -12,23 +12,24 @@ interface DreamAnalysisRequest {
 }
 
 const getMoodDescription = (x: number, y: number): string => {
-  const energy = y < 30 ? "낮은 에너지" : y > 70 ? "높은 에너지" : "중간 에너지";
-  const valence = x < 30 ? "부정적" : x > 70 ? "긍정적" : "중립적";
-  
-  if (x > 70 && y > 70) return "흥분되고 기쁜 상태 (높은 에너지, 긍정적)";
-  if (x < 30 && y > 70) return "불안하거나 화난 상태 (높은 에너지, 부정적)";
-  if (x > 70 && y < 30) return "평온하고 만족스러운 상태 (낮은 에너지, 긍정적)";
-  if (x < 30 && y < 30) return "우울하거나 무기력한 상태 (낮은 에너지, 부정적)";
-  return `${valence} 감정과 ${energy}를 느끼는 상태`;
+  if (x > 70 && y > 70) return "흥분되고 기쁜 상태 — 에너지가 넘치고 긍정적인 감정이 가득합니다";
+  if (x < 30 && y > 70) return "불안하거나 긴장된 상태 — 마음이 불안정하고 에너지는 높지만 방향을 잃은 느낌입니다";
+  if (x > 70 && y < 30) return "평온하고 만족스러운 상태 — 고요하지만 내면의 따뜻함이 느껴집니다";
+  if (x < 30 && y < 30) return "우울하거나 무기력한 상태 — 에너지가 낮고 마음이 가라앉아 있습니다";
+  if (x > 50 && y > 50) return "약간 들뜨고 기분 좋은 상태";
+  if (x < 50 && y > 50) return "약간 불안하고 긴장된 상태";
+  if (x > 50 && y < 50) return "차분하고 안정된 상태";
+  if (x < 50 && y < 50) return "약간 침울하고 지친 상태";
+  return "감정적으로 중립적인 상태";
 };
 
 const eventLabels: Record<string, string> = {
-  work: "업무/학업",
-  relationship: "대인관계",
-  money: "금전/재정",
-  health: "건강",
-  self: "자아실현",
-  other: "기타",
+  work: "업무/학업 스트레스",
+  relationship: "대인관계 갈등이나 변화",
+  finance: "금전적 고민",
+  health: "건강에 대한 걱정",
+  growth: "자아실현과 성장에 대한 욕구",
+  other: "기타 고민",
 };
 
 serve(async (req) => {
@@ -47,40 +48,54 @@ serve(async (req) => {
     const moodDescription = getMoodDescription(mood.x, mood.y);
     const eventDescriptions = events.map(e => eventLabels[e] || e).join(", ");
 
-    const systemPrompt = `당신은 융 심리학에 기반한 전문 꿈 분석가입니다. 사용자의 꿈 내용, 최근 겪은 사건, 그리고 현재 감정 상태를 종합적으로 분석하여 무의식적 메시지를 해석합니다.
+    const systemPrompt = `당신은 20년 경력의 임상심리학자이자 융 분석심리학 전문가입니다. 꿈 분석을 통해 내담자의 무의식과 소통하는 것이 당신의 전문 영역입니다.
 
-분석 시 다음 원칙을 따르세요:
-1. 꿈의 상징들을 융 심리학적 관점에서 해석합니다
-2. 사용자의 현재 감정 상태와 최근 사건을 꿈과 연결합니다
-3. 실용적이고 행동 가능한 조언을 제공합니다
-4. 따뜻하고 공감적인 어조를 유지합니다
+당신의 분석 스타일:
+- 마치 따뜻한 상담실에서 1:1로 대화하듯 친근하고 공감적인 어조로 말합니다
+- "~하신 것 같아요", "~느끼셨을 수도 있어요"처럼 부드럽고 존중하는 표현을 씁니다
+- 단순한 사전적 해석이 아니라, 꿈꾼 사람의 삶의 맥락과 감정을 깊이 연결합니다
+- 분석이 사용자에게 "맞아, 그런 것 같아"라는 공감을 이끌어내야 합니다
 
-반드시 다음 JSON 형식으로 응답하세요:
+분석 원칙:
+1. 꿈의 각 장면과 상징을 융 심리학의 원형(archetype), 그림자(shadow), 페르소나, 아니마/아니무스 관점에서 해석합니다
+2. 사용자의 현재 감정 상태와 최근 사건이 꿈에 어떻게 투영되었는지 구체적으로 연결합니다
+3. 꿈이 전달하려는 무의식의 메시지를 마치 편지를 쓰듯 따뜻하게 전달합니다
+4. 심리학적 통찰을 일상 언어로 쉽게 풀어 설명합니다
+5. 실질적이고 오늘 당장 실천할 수 있는 구체적인 행동 지침을 제안합니다
+6. 마지막에 따뜻한 위로와 격려의 메시지를 담습니다
+
+반드시 다음 JSON 형식으로만 응답하세요 (다른 텍스트 없이):
 {
-  "summary": "꿈의 핵심 메시지를 한 문장으로 요약",
+  "summary": "꿈의 핵심 메시지를 2-3문장으로 따뜻하게 요약. 사용자가 읽었을 때 '내 꿈이 이런 의미였구나'라고 느낄 수 있도록",
+  "dreamType": "꿈의 심리학적 유형 (예: '보상몽 - 현실에서 채워지지 않은 욕구를 꿈에서 충족', '경고몽 - 무의식이 보내는 주의 신호', '소망몽 - 내면 깊은 곳의 바람이 투영된 꿈', '반복몽 - 해결되지 않은 심리적 과제', '변환몽 - 심리적 성장과 변화의 신호')",
   "symbols": [
-    { "name": "상징1", "meaning": "융 심리학적 의미 해석" },
-    { "name": "상징2", "meaning": "융 심리학적 의미 해석" }
+    { "name": "꿈에 등장한 핵심 상징", "meaning": "이 상징이 가진 심리학적 의미를 3-4문장으로 풍부하게 설명. 융 심리학적 원형과 연결하고 사용자의 삶과 관련지어 해석", "emotion": "이 상징이 불러일으키는 핵심 감정 (한 단어)" }
   ],
-  "emotionConnection": "현재 감정/사건과 꿈의 연결성 설명 (2-3문장)",
+  "emotionConnection": "현재 감정 상태와 최근 사건이 꿈에 어떻게 반영되었는지 4-5문장으로 구체적이고 공감적으로 설명. '혹시 최근에 ~한 경험이 있으셨나요?'처럼 대화하듯",
+  "unconsciousMessage": "무의식이 당신에게 보내는 메시지를 2-3문장으로 마치 편지처럼 따뜻하게 전달. '당신의 내면은 이렇게 말하고 있어요...'",
+  "psychologicalInsight": "이 꿈을 통해 알 수 있는 심리적 통찰을 3-4문장으로 설명. 현재 심리 상태, 내면의 갈등이나 욕구, 성장 가능성 등",
   "advice": [
-    "구체적인 행동 조언 1",
-    "구체적인 행동 조언 2",
-    "구체적인 행동 조언 3"
-  ]
+    "오늘 당장 할 수 있는 구체적 행동 1 (왜 도움이 되는지 간단히 설명 포함)",
+    "심리적 회복/성장을 위한 구체적 행동 2",
+    "장기적 관점에서의 행동 3",
+    "자기 돌봄을 위한 행동 4"
+  ],
+  "comfortMessage": "따뜻한 위로와 격려의 메시지 2-3문장. 꿈을 기록한 용기를 칭찬하고, 앞으로의 여정을 응원"
 }`;
 
-    const userPrompt = `다음 정보를 바탕으로 꿈을 분석해주세요:
+    const userPrompt = `다음 정보를 바탕으로 깊이 있고 공감적인 꿈 분석을 해주세요:
 
 **꿈 내용:**
 ${dreamContent}
 
-**최근 겪은 사건/고민:**
-${eventDescriptions || "선택되지 않음"}
+**최근 겪고 있는 일/고민:**
+${eventDescriptions || "특별히 선택하지 않음 (일상적인 상태)"}
 
 **현재 감정 상태:**
 ${moodDescription}
-(감정 좌표: X=${mood.x}% 긍정, Y=${mood.y}% 에너지)`;
+(감정 좌표: 긍정성 ${mood.x}%, 에너지 ${mood.y}%)
+
+이 사람의 꿈을 마치 오랜 내담자를 대하듯 따뜻하고 깊이 있게 분석해주세요. 단순한 사전적 해석이 아니라, 이 사람만을 위한 맞춤 분석이 되어야 합니다.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -89,25 +104,25 @@ ${moodDescription}
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-3-pro-preview",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
-        temperature: 0.7,
+        temperature: 0.8,
       }),
     });
 
     if (!response.ok) {
       if (response.status === 429) {
         return new Response(
-          JSON.stringify({ error: "요청이 너무 많습니다. 잠시 후 다시 시도해주세요." }),
+          JSON.stringify({ error: "요청이 너무 많습니다 (429). 잠시 후 다시 시도해주세요." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       if (response.status === 402) {
         return new Response(
-          JSON.stringify({ error: "AI 크레딧이 부족합니다. 충전 후 다시 시도해주세요." }),
+          JSON.stringify({ error: "AI 크레딧이 부족합니다 (402)." }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -123,7 +138,6 @@ ${moodDescription}
       throw new Error("No content in AI response");
     }
 
-    // Parse JSON from the response
     const jsonMatch = content.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       throw new Error("Could not parse JSON from AI response");

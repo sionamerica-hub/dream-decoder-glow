@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { DreamAnalysis } from "./useDreams";
 
 interface DreamAnalysisInput {
   dreamContent: string;
@@ -8,19 +9,12 @@ interface DreamAnalysisInput {
   mood: { x: number; y: number };
 }
 
-interface DreamAnalysisResult {
-  summary: string;
-  symbols: Array<{ name: string; meaning: string }>;
-  emotionConnection: string;
-  advice: string[];
-}
-
 export function useDreamAnalysis() {
   const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<DreamAnalysisResult | null>(null);
+  const [result, setResult] = useState<DreamAnalysis | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const analyzeDream = async (input: DreamAnalysisInput): Promise<DreamAnalysisResult | null> => {
+  const analyzeDream = async (input: DreamAnalysisInput): Promise<DreamAnalysis | null> => {
     setIsLoading(true);
     setError(null);
     setResult(null);
@@ -35,9 +29,9 @@ export function useDreamAnalysis() {
       }
 
       if (data.error) {
-        if (data.error.includes("429") || data.error.includes("너무 많습니다")) {
+        if (data.error.includes("429")) {
           toast.error("요청이 너무 많습니다. 잠시 후 다시 시도해주세요.");
-        } else if (data.error.includes("402") || data.error.includes("크레딧")) {
+        } else if (data.error.includes("402")) {
           toast.error("AI 크레딧이 부족합니다.");
         } else {
           toast.error("분석 중 오류가 발생했습니다.");

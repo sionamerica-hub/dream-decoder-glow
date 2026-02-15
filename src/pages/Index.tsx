@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Moon, Calendar, TrendingUp, Clock, ChevronRight, Plus, LogOut } from "lucide-react";
+import { Moon, Calendar, TrendingUp, Clock, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { BottomNav } from "@/components/BottomNav";
@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useDreamAnalysis } from "@/hooks/useDreamAnalysis";
 import { useDreams, Dream } from "@/hooks/useDreams";
-import { useAuth } from "@/contexts/AuthContext";
 
 type Tab = "home" | "record" | "reports" | "profile";
 type RecordStep = "dream" | "events" | "mood" | "analyzing" | "result";
@@ -37,16 +36,8 @@ const getMoodLabel = (moodX: number | null, moodY: number | null): string => {
   return "중립";
 };
 
-const parseDreamAnalysis = (dream: Dream) => ({
-  summary: dream.analysis_summary || "",
-  symbols: dream.analysis_symbols ? JSON.parse(dream.analysis_symbols) : [],
-  emotionConnection: dream.analysis_emotion || "",
-  advice: dream.analysis_advice ? JSON.parse(dream.analysis_advice) : [],
-});
-
 const Index = () => {
-  const { user, signOut } = useAuth();
-  const { dreams, loading: dreamsLoading, saveDream } = useDreams();
+  const { dreams, loading: dreamsLoading, saveDream, deleteDream } = useDreams();
   const [activeTab, setActiveTab] = useState<Tab>("home");
   const [recordStep, setRecordStep] = useState<RecordStep>("dream");
   const [dreamText, setDreamText] = useState("");
@@ -75,7 +66,6 @@ const Index = () => {
     });
     
     if (result) {
-      // Save to database
       await saveDream({
         content: dreamText,
         events: selectedEvents,
@@ -84,7 +74,6 @@ const Index = () => {
       });
       setRecordStep("result");
     } else {
-      // On error, go back to dream input
       setRecordStep("dream");
     }
   };
@@ -102,21 +91,23 @@ const Index = () => {
     setActiveTab("reports");
   };
 
-  // Calculate stats
+  const handleDeleteDream = async (dreamId: string) => {
+    const success = await deleteDream(dreamId);
+    if (success && selectedDream?.id === dreamId) {
+      setSelectedDream(null);
+    }
+  };
+
   const thisMonthDreams = dreams.filter((d) => {
     const dreamDate = new Date(d.created_at);
     const now = new Date();
-    return (
-      dreamDate.getMonth() === now.getMonth() &&
-      dreamDate.getFullYear() === now.getFullYear()
-    );
+    return dreamDate.getMonth() === now.getMonth() && dreamDate.getFullYear() === now.getFullYear();
   });
 
   const latestDream = dreams[0];
 
   const renderHomeTab = () => (
     <div className="space-y-6 animate-fade-in">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-2xl font-bold mb-1">
@@ -129,25 +120,11 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Quick Stats */}
       <div className="grid grid-cols-2 gap-4">
-        <SummaryCard
-          title="이번 달 기록"
-          value={`${thisMonthDreams.length}개`}
-          subtitle="꿈"
-          icon={Calendar}
-          variant="default"
-        />
-        <SummaryCard
-          title="총 기록"
-          value={`${dreams.length}개`}
-          subtitle="보고서"
-          icon={TrendingUp}
-          variant="accent"
-        />
+        <SummaryCard title="이번 달 기록" value={`${thisMonthDreams.length}개`} subtitle="꿈" icon={Calendar} variant="default" />
+        <SummaryCard title="총 기록" value={`${dreams.length}개`} subtitle="보고서" icon={TrendingUp} variant="accent" />
       </div>
 
-      {/* Latest Dream Preview */}
       {latestDream ? (
         <GlowCard variant="warm" className="p-5">
           <div className="flex items-start justify-between mb-4">
@@ -163,18 +140,10 @@ const Index = () => {
                 </p>
               </div>
             </div>
-            <span className="text-2xl">
-              {getMoodEmoji(latestDream.mood_x, latestDream.mood_y)}
-            </span>
+            <span className="text-2xl">{getMoodEmoji(latestDream.mood_x, latestDream.mood_y)}</span>
           </div>
-          <p className="text-foreground/80 line-clamp-2 mb-4">
-            {latestDream.content}
-          </p>
-          <Button 
-            variant="ghost" 
-            className="w-full justify-between hover:bg-white/5"
-            onClick={() => handleViewDream(latestDream)}
-          >
+          <p className="text-foreground/80 line-clamp-2 mb-4">{latestDream.content}</p>
+          <Button variant="ghost" className="w-full justify-between hover:bg-white/5" onClick={() => handleViewDream(latestDream)}>
             <span>분석 결과 보기</span>
             <ChevronRight className="w-4 h-4" />
           </Button>
@@ -186,12 +155,10 @@ const Index = () => {
         </GlowCard>
       )}
 
-      {/* Calendar */}
       <GlowCard className="p-5">
         <DreamCalendar onDateSelect={(date) => console.log("Selected:", date)} />
       </GlowCard>
 
-      {/* New Dream Button */}
       <Button
         onClick={() => setActiveTab("record")}
         className={cn(
@@ -209,18 +176,15 @@ const Index = () => {
 
   const renderRecordTab = () => (
     <div className="space-y-6 animate-fade-in">
-      {/* Progress Indicator */}
       <div className="flex items-center justify-center gap-2">
         {(["dream", "events", "mood", "result"] as const).map((step, i) => (
           <div
             key={step}
             className={cn(
               "h-1.5 rounded-full transition-all duration-300",
-              step === recordStep || 
-              (recordStep === "analyzing" && step === "result")
+              step === recordStep || (recordStep === "analyzing" && step === "result")
                 ? "w-8 bg-gradient-to-r from-primary to-accent"
-                : ["dream", "events", "mood", "result"].indexOf(step) < 
-                  ["dream", "events", "mood", "analyzing", "result"].indexOf(recordStep)
+                : ["dream", "events", "mood", "result"].indexOf(step) < ["dream", "events", "mood", "analyzing", "result"].indexOf(recordStep)
                   ? "w-4 bg-primary/50"
                   : "w-4 bg-muted"
             )}
@@ -234,9 +198,7 @@ const Index = () => {
             <h2 className="font-display text-2xl font-bold mb-2">
               <span className="gradient-text">꿈</span>을 기록하세요
             </h2>
-            <p className="text-muted-foreground">
-              기억나는 대로 자세히 적어주세요
-            </p>
+            <p className="text-muted-foreground">기억나는 대로 자세히 적어주세요</p>
           </div>
           <DreamInput onSubmit={handleDreamSubmit} />
         </div>
@@ -244,18 +206,8 @@ const Index = () => {
 
       {recordStep === "events" && (
         <div className="space-y-6">
-          <EventSelector 
-            selectedEvents={selectedEvents}
-            onEventsChange={setSelectedEvents}
-          />
-          <Button
-            onClick={handleEventsNext}
-            className={cn(
-              "w-full py-6 rounded-2xl",
-              "bg-gradient-to-r from-primary to-accent",
-              "hover:shadow-neon transition-all"
-            )}
-          >
+          <EventSelector selectedEvents={selectedEvents} onEventsChange={setSelectedEvents} />
+          <Button onClick={handleEventsNext} className={cn("w-full py-6 rounded-2xl", "bg-gradient-to-r from-primary to-accent", "hover:shadow-neon transition-all")}>
             다음 단계
           </Button>
         </div>
@@ -263,19 +215,8 @@ const Index = () => {
 
       {recordStep === "mood" && (
         <div className="space-y-8 px-4">
-          <MoodSelector 
-            onMoodChange={(x, y) => setMoodPosition({ x, y })}
-            initialX={moodPosition.x}
-            initialY={moodPosition.y}
-          />
-          <Button
-            onClick={handleMoodNext}
-            className={cn(
-              "w-full py-6 rounded-2xl",
-              "bg-gradient-to-r from-primary to-accent",
-              "hover:shadow-neon transition-all"
-            )}
-          >
+          <MoodSelector onMoodChange={(x, y) => setMoodPosition({ x, y })} initialX={moodPosition.x} initialY={moodPosition.y} />
+          <Button onClick={handleMoodNext} className={cn("w-full py-6 rounded-2xl", "bg-gradient-to-r from-primary to-accent", "hover:shadow-neon transition-all")}>
             분석 시작하기
           </Button>
         </div>
@@ -287,13 +228,10 @@ const Index = () => {
             <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-accent animate-pulse" />
             <div className="absolute inset-0 w-24 h-24 rounded-full bg-gradient-to-br from-primary to-accent blur-2xl opacity-50 animate-pulse" />
           </div>
-          <div className="text-center">
-            <h3 className="font-display text-xl font-semibold mb-2">
-              꿈을 분석하고 있습니다
-            </h3>
-            <p className="text-muted-foreground">
-              AI가 당신의 무의식을 탐구하고 있어요...
-            </p>
+          <div className="text-center space-y-2">
+            <h3 className="font-display text-xl font-semibold">꿈을 분석하고 있습니다</h3>
+            <p className="text-muted-foreground">AI 심리분석가가 당신의 무의식을 탐구하고 있어요...</p>
+            <p className="text-xs text-muted-foreground/60">약 10-15초 소요됩니다</p>
           </div>
         </div>
       )}
@@ -304,21 +242,19 @@ const Index = () => {
             <h2 className="font-display text-2xl font-bold mb-2">
               분석 <span className="gradient-text">완료</span>
             </h2>
-            <p className="text-muted-foreground">
-              당신의 꿈이 말하는 것들
-            </p>
+            <p className="text-muted-foreground">당신의 꿈이 말하는 것들</p>
           </div>
-          <AnalysisReport 
+          <AnalysisReport
             summary={analysisResult.summary}
+            dreamType={analysisResult.dreamType}
             symbols={analysisResult.symbols}
             emotionConnection={analysisResult.emotionConnection}
+            unconsciousMessage={analysisResult.unconsciousMessage}
+            psychologicalInsight={analysisResult.psychologicalInsight}
             advice={analysisResult.advice}
+            comfortMessage={analysisResult.comfortMessage}
           />
-          <Button
-            onClick={resetRecord}
-            variant="outline"
-            className="w-full py-6 rounded-2xl border-primary/30 hover:bg-primary/10"
-          >
+          <Button onClick={resetRecord} variant="outline" className="w-full py-6 rounded-2xl border-primary/30 hover:bg-primary/10">
             새로운 꿈 기록하기
           </Button>
         </div>
@@ -330,13 +266,19 @@ const Index = () => {
     <div className="space-y-6 animate-fade-in">
       {selectedDream ? (
         <>
-          <Button
-            variant="ghost"
-            onClick={() => setSelectedDream(null)}
-            className="text-muted-foreground"
-          >
-            ← 목록으로
-          </Button>
+          <div className="flex items-center justify-between">
+            <Button variant="ghost" onClick={() => setSelectedDream(null)} className="text-muted-foreground">
+              ← 목록으로
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleDeleteDream(selectedDream.id)}
+              className="text-destructive hover:bg-destructive/10"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
           <div className="text-center">
             <h2 className="font-display text-xl font-bold mb-2">
               {format(new Date(selectedDream.created_at), "yyyy년 M월 d일", { locale: ko })}
@@ -346,9 +288,22 @@ const Index = () => {
             </p>
           </div>
           <GlowCard className="p-4">
-            <p className="text-foreground/90">{selectedDream.content}</p>
+            <p className="text-foreground/90 leading-relaxed">{selectedDream.content}</p>
           </GlowCard>
-          <AnalysisReport {...parseDreamAnalysis(selectedDream)} />
+          {selectedDream.analysis ? (
+            <AnalysisReport
+              summary={selectedDream.analysis.summary}
+              dreamType={selectedDream.analysis.dreamType}
+              symbols={selectedDream.analysis.symbols}
+              emotionConnection={selectedDream.analysis.emotionConnection}
+              unconsciousMessage={selectedDream.analysis.unconsciousMessage}
+              psychologicalInsight={selectedDream.analysis.psychologicalInsight}
+              advice={selectedDream.analysis.advice}
+              comfortMessage={selectedDream.analysis.comfortMessage}
+            />
+          ) : (
+            <p className="text-center text-muted-foreground">분석 데이터가 없습니다</p>
+          )}
         </>
       ) : (
         <>
@@ -356,21 +311,21 @@ const Index = () => {
             <h2 className="font-display text-2xl font-bold mb-2">
               분석 <span className="gradient-text">보고서</span>
             </h2>
-            <p className="text-muted-foreground">
-              지금까지의 꿈 분석 기록
-            </p>
+            <p className="text-muted-foreground">지금까지의 꿈 분석 기록</p>
           </div>
           
           {dreamsLoading ? (
-            <div className="text-center py-10">
-              <p className="text-muted-foreground">불러오는 중...</p>
-            </div>
+            <div className="text-center py-10"><p className="text-muted-foreground">불러오는 중...</p></div>
           ) : dreams.length === 0 ? (
-            <div className="text-center py-10">
+            <div className="text-center py-10 space-y-2">
+              <p className="text-4xl">🌙</p>
               <p className="text-muted-foreground">아직 기록된 꿈이 없어요</p>
+              <Button variant="ghost" onClick={() => setActiveTab("record")} className="text-primary">
+                첫 번째 꿈 기록하기 →
+              </Button>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {dreams.map((dream, i) => (
                 <GlowCard 
                   key={dream.id} 
@@ -379,19 +334,23 @@ const Index = () => {
                   onClick={() => setSelectedDream(dream)}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-2xl">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-2xl flex-shrink-0">
                       {getMoodEmoji(dream.mood_x, dream.mood_y)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold truncate">
-                        {dream.content.slice(0, 30)}...
+                      <h3 className="font-semibold truncate text-sm">
+                        {dream.analysis?.summary?.slice(0, 40) || dream.content.slice(0, 30)}...
                       </h3>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span>
-                          {format(new Date(dream.created_at), "M월 d일", { locale: ko })}
-                        </span>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                        <span>{format(new Date(dream.created_at), "M월 d일", { locale: ko })}</span>
                         <span>•</span>
                         <span>{getMoodLabel(dream.mood_x, dream.mood_y)}</span>
+                        {dream.analysis?.dreamType && (
+                          <>
+                            <span>•</span>
+                            <span className="text-primary/70">{dream.analysis.dreamType.split(" - ")[0]}</span>
+                          </>
+                        )}
                       </div>
                     </div>
                     <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
@@ -406,7 +365,6 @@ const Index = () => {
   );
 
   const renderProfileTab = () => {
-    // Calculate emotion distribution from actual dreams
     const emotionCounts = { peaceful: 0, excited: 0, anxious: 0, sad: 0, neutral: 0 };
     dreams.forEach((d) => {
       const label = getMoodLabel(d.mood_x, d.mood_y);
@@ -426,29 +384,21 @@ const Index = () => {
               <span className="text-4xl">🌙</span>
             </div>
           </div>
-          <h2 className="font-display text-2xl font-bold">
-            {user?.email?.split("@")[0] || "드리머"}
-          </h2>
-          <p className="text-muted-foreground text-sm">{user?.email}</p>
+          <h2 className="font-display text-2xl font-bold">드리머</h2>
+          <p className="text-muted-foreground text-sm">꿈을 통해 나를 알아가는 여정</p>
         </div>
 
         <div className="grid grid-cols-3 gap-4">
           <div className="text-center p-4 rounded-2xl bg-card/50">
-            <div className="font-display text-2xl font-bold gradient-text">
-              {dreams.length}
-            </div>
+            <div className="font-display text-2xl font-bold gradient-text">{dreams.length}</div>
             <div className="text-sm text-muted-foreground">총 기록</div>
           </div>
           <div className="text-center p-4 rounded-2xl bg-card/50">
-            <div className="font-display text-2xl font-bold gradient-text-warm">
-              {thisMonthDreams.length}
-            </div>
+            <div className="font-display text-2xl font-bold gradient-text-warm">{thisMonthDreams.length}</div>
             <div className="text-sm text-muted-foreground">이번 달</div>
           </div>
           <div className="text-center p-4 rounded-2xl bg-card/50">
-            <div className="font-display text-2xl font-bold text-cyan">
-              {dreams.filter((d) => d.analysis_summary).length}
-            </div>
+            <div className="font-display text-2xl font-bold text-cyan">{dreams.filter((d) => d.analysis).length}</div>
             <div className="text-sm text-muted-foreground">분석 완료</div>
           </div>
         </div>
@@ -468,24 +418,12 @@ const Index = () => {
                   <span className="text-muted-foreground">{item.percent}%</span>
                 </div>
                 <div className="h-2 rounded-full bg-muted overflow-hidden">
-                  <div 
-                    className={`h-full rounded-full bg-gradient-to-r ${item.color}`}
-                    style={{ width: `${item.percent}%` }}
-                  />
+                  <div className={`h-full rounded-full bg-gradient-to-r ${item.color}`} style={{ width: `${item.percent}%` }} />
                 </div>
               </div>
             ))}
           </div>
         </GlowCard>
-
-        <Button
-          onClick={signOut}
-          variant="outline"
-          className="w-full py-6 rounded-2xl border-destructive/30 hover:bg-destructive/10 text-destructive"
-        >
-          <LogOut className="w-4 h-4 mr-2" />
-          로그아웃
-        </Button>
       </div>
     );
   };
