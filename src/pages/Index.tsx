@@ -8,6 +8,7 @@ import { MoodSelector } from "@/components/MoodSelector";
 import { EventSelector } from "@/components/EventSelector";
 import { DreamInput } from "@/components/DreamInput";
 import { AnalysisReport } from "@/components/AnalysisReport";
+import { DreamChat } from "@/components/DreamChat";
 import { SummaryCard } from "@/components/SummaryCard";
 import { GlowCard } from "@/components/ui/GlowCard";
 import { Button } from "@/components/ui/button";
