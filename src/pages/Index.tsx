@@ -300,16 +300,22 @@ const Index = () => {
             <p className="text-foreground/90 leading-relaxed">{selectedDream.content}</p>
           </GlowCard>
           {selectedDream.analysis ? (
-            <AnalysisReport
-              summary={selectedDream.analysis.summary}
-              dreamType={selectedDream.analysis.dreamType}
-              symbols={selectedDream.analysis.symbols}
-              emotionConnection={selectedDream.analysis.emotionConnection}
-              unconsciousMessage={selectedDream.analysis.unconsciousMessage}
-              psychologicalInsight={selectedDream.analysis.psychologicalInsight}
-              advice={selectedDream.analysis.advice}
-              comfortMessage={selectedDream.analysis.comfortMessage}
-            />
+            <>
+              <AnalysisReport
+                summary={selectedDream.analysis.summary}
+                dreamType={selectedDream.analysis.dreamType}
+                symbols={selectedDream.analysis.symbols}
+                emotionConnection={selectedDream.analysis.emotionConnection}
+                unconsciousMessage={selectedDream.analysis.unconsciousMessage}
+                psychologicalInsight={selectedDream.analysis.psychologicalInsight}
+                advice={selectedDream.analysis.advice}
+                comfortMessage={selectedDream.analysis.comfortMessage}
+              />
+              <DreamChat
+                dreamContent={selectedDream.content}
+                analysis={selectedDream.analysis}
+              />
+            </>
           ) : (
             <p className="text-center text-muted-foreground">분석 데이터가 없습니다</p>
           )}
