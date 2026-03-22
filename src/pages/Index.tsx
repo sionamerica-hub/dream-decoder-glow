@@ -156,7 +156,7 @@ const Index = () => {
       )}
 
       <GlowCard className="p-5">
-        <DreamCalendar onDateSelect={(date) => console.log("Selected:", date)} />
+        <DreamCalendar dreams={dreams} onDateSelect={(date) => console.log("Selected:", date)} />
       </GlowCard>
 
       <Button
