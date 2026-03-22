@@ -156,7 +156,15 @@ const Index = () => {
       )}
 
       <GlowCard className="p-5">
-        <DreamCalendar dreams={dreams} onDateSelect={(date) => console.log("Selected:", date)} />
+        <DreamCalendar dreams={dreams} onDateSelect={(date) => {
+          const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+          const dream = dreams.find(d => d.created_at.startsWith(dateStr));
+          if (dream) {
+            handleViewDream(dream);
+          } else {
+            setActiveTab("record");
+          }
+        }} />
       </GlowCard>
 
       <Button
