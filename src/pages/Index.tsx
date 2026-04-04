@@ -12,11 +12,16 @@ import { DreamChat } from "@/components/DreamChat";
 import { SummaryCard } from "@/components/SummaryCard";
 import { GlowCard } from "@/components/ui/GlowCard";
 import { Button } from "@/components/ui/button";
+import { CompareView } from "@/components/CompareView";
+import { DateSelectorModal } from "@/components/DateSelectorModal";
+import { PatternTimeline } from "@/components/PatternTimeline";
+import { PatternInsightCard } from "@/components/PatternInsightCard";
 import { cn } from "@/lib/utils";
 import { useDreamAnalysis } from "@/hooks/useDreamAnalysis";
 import { useDreams, Dream } from "@/hooks/useDreams";
+import { usePatternInsight } from "@/hooks/usePatternInsight";
 
-type Tab = "home" | "record" | "reports" | "profile";
+type Tab = "home" | "record" | "reports" | "compare" | "profile";
 type RecordStep = "dream" | "events" | "mood" | "analyzing" | "result";
 
 const getMoodEmoji = (moodX: number | null, moodY: number | null): string => {
@@ -45,8 +50,11 @@ const Index = () => {
   const [selectedEvents, setSelectedEvents] = useState<string[]>([]);
   const [moodPosition, setMoodPosition] = useState({ x: 50, y: 50 });
   const [selectedDream, setSelectedDream] = useState<Dream | null>(null);
+  const [showDateSelector, setShowDateSelector] = useState(false);
+  const [compareDreams, setCompareDreams] = useState<{ a: Dream; b: Dream } | null>(null);
   
   const { analyzeDream, isLoading: isAnalyzing, result: analysisResult, reset: resetAnalysis } = useDreamAnalysis();
+  const { insight, isLoading: insightLoading, error: insightError, refetch: refetchInsight, isAvailable: insightAvailable } = usePatternInsight(dreams);
 
   const handleDreamSubmit = (text: string) => {
     setDreamText(text);
@@ -443,18 +451,77 @@ const Index = () => {
     );
   };
 
+  const renderCompareTab = () => (
+    <div className="space-y-6 animate-fade-in">
+      {compareDreams ? (
+        <CompareView
+          dreamA={compareDreams.a}
+          dreamB={compareDreams.b}
+          onClose={() => setCompareDreams(null)}
+        />
+      ) : (
+        <>
+          <div className="text-center">
+            <h2 className="font-display text-2xl font-bold mb-2">
+              패턴 <span className="gradient-text">분석</span>
+            </h2>
+            <p className="text-muted-foreground">꿈의 흐름을 한눈에 파악하세요</p>
+          </div>
+
+          <Button
+            onClick={() => setShowDateSelector(true)}
+            disabled={dreams.filter((d) => d.analysis).length < 2}
+            className={cn(
+              "w-full py-5 rounded-2xl gap-2",
+              "bg-gradient-to-r from-primary to-accent",
+              "disabled:opacity-40"
+            )}
+          >
+            🔀 나란히 비교하기
+          </Button>
+
+          <PatternInsightCard
+            insight={insight}
+            isLoading={insightLoading}
+            error={insightError}
+            isAvailable={insightAvailable}
+            onRefresh={refetchInsight}
+          />
+
+          <PatternTimeline
+            dreams={dreams}
+            onDreamClick={(dream) => handleViewDream(dream)}
+          />
+        </>
+      )}
+
+      {showDateSelector && (
+        <DateSelectorModal
+          dreams={dreams}
+          onSelect={(a, b) => {
+            setCompareDreams({ a, b });
+            setShowDateSelector(false);
+          }}
+          onClose={() => setShowDateSelector(false)}
+        />
+      )}
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-cosmic pb-28">
-      <div className="max-w-lg mx-auto px-4 pt-8">
+      <div className={cn("mx-auto px-4 pt-8", activeTab === "compare" && compareDreams ? "max-w-4xl" : "max-w-lg")}>
         {activeTab === "home" && renderHomeTab()}
         {activeTab === "record" && renderRecordTab()}
         {activeTab === "reports" && renderReportsTab()}
+        {activeTab === "compare" && renderCompareTab()}
         {activeTab === "profile" && renderProfileTab()}
       </div>
       
       <BottomNav activeTab={activeTab} onTabChange={(tab) => {
         setActiveTab(tab as Tab);
         if (tab !== "reports") setSelectedDream(null);
+        if (tab !== "compare") setCompareDreams(null);
       }} />
     </div>
   );

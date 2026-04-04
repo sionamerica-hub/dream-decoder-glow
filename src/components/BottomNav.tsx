@@ -1,4 +1,4 @@
-import { Home, PenLine, BookOpen, User } from "lucide-react";
+import { Home, PenLine, BookOpen, GitCompareArrows, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -11,6 +11,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: "home", label: "홈", icon: <Home className="w-5 h-5" /> },
   { id: "record", label: "기록", icon: <PenLine className="w-5 h-5" /> },
   { id: "reports", label: "보고서", icon: <BookOpen className="w-5 h-5" /> },
+  { id: "compare", label: "비교", icon: <GitCompareArrows className="w-5 h-5" /> },
   { id: "profile", label: "프로필", icon: <User className="w-5 h-5" /> },
 ];
 
