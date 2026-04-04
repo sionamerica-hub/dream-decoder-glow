@@ -451,18 +451,77 @@ const Index = () => {
     );
   };
 
+  const renderCompareTab = () => (
+    <div className="space-y-6 animate-fade-in">
+      {compareDreams ? (
+        <CompareView
+          dreamA={compareDreams.a}
+          dreamB={compareDreams.b}
+          onClose={() => setCompareDreams(null)}
+        />
+      ) : (
+        <>
+          <div className="text-center">
+            <h2 className="font-display text-2xl font-bold mb-2">
+              패턴 <span className="gradient-text">분석</span>
+            </h2>
+            <p className="text-muted-foreground">꿈의 흐름을 한눈에 파악하세요</p>
+          </div>
+
+          <Button
+            onClick={() => setShowDateSelector(true)}
+            disabled={dreams.filter((d) => d.analysis).length < 2}
+            className={cn(
+              "w-full py-5 rounded-2xl gap-2",
+              "bg-gradient-to-r from-primary to-accent",
+              "disabled:opacity-40"
+            )}
+          >
+            🔀 나란히 비교하기
+          </Button>
+
+          <PatternInsightCard
+            insight={insight}
+            isLoading={insightLoading}
+            error={insightError}
+            isAvailable={insightAvailable}
+            onRefresh={refetchInsight}
+          />
+
+          <PatternTimeline
+            dreams={dreams}
+            onDreamClick={(dream) => handleViewDream(dream)}
+          />
+        </>
+      )}
+
+      {showDateSelector && (
+        <DateSelectorModal
+          dreams={dreams}
+          onSelect={(a, b) => {
+            setCompareDreams({ a, b });
+            setShowDateSelector(false);
+          }}
+          onClose={() => setShowDateSelector(false)}
+        />
+      )}
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-cosmic pb-28">
-      <div className="max-w-lg mx-auto px-4 pt-8">
+      <div className={cn("mx-auto px-4 pt-8", activeTab === "compare" && compareDreams ? "max-w-4xl" : "max-w-lg")}>
         {activeTab === "home" && renderHomeTab()}
         {activeTab === "record" && renderRecordTab()}
         {activeTab === "reports" && renderReportsTab()}
+        {activeTab === "compare" && renderCompareTab()}
         {activeTab === "profile" && renderProfileTab()}
       </div>
       
       <BottomNav activeTab={activeTab} onTabChange={(tab) => {
         setActiveTab(tab as Tab);
         if (tab !== "reports") setSelectedDream(null);
+        if (tab !== "compare") setCompareDreams(null);
       }} />
     </div>
   );
