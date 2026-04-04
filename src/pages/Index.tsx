@@ -12,11 +12,16 @@ import { DreamChat } from "@/components/DreamChat";
 import { SummaryCard } from "@/components/SummaryCard";
 import { GlowCard } from "@/components/ui/GlowCard";
 import { Button } from "@/components/ui/button";
+import { CompareView } from "@/components/CompareView";
+import { DateSelectorModal } from "@/components/DateSelectorModal";
+import { PatternTimeline } from "@/components/PatternTimeline";
+import { PatternInsightCard } from "@/components/PatternInsightCard";
 import { cn } from "@/lib/utils";
 import { useDreamAnalysis } from "@/hooks/useDreamAnalysis";
 import { useDreams, Dream } from "@/hooks/useDreams";
+import { usePatternInsight } from "@/hooks/usePatternInsight";
 
-type Tab = "home" | "record" | "reports" | "profile";
+type Tab = "home" | "record" | "reports" | "compare" | "profile";
 type RecordStep = "dream" | "events" | "mood" | "analyzing" | "result";
 
 const getMoodEmoji = (moodX: number | null, moodY: number | null): string => {
