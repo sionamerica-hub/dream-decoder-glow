@@ -50,8 +50,11 @@ const Index = () => {
   const [selectedEvents, setSelectedEvents] = useState<string[]>([]);
   const [moodPosition, setMoodPosition] = useState({ x: 50, y: 50 });
   const [selectedDream, setSelectedDream] = useState<Dream | null>(null);
+  const [showDateSelector, setShowDateSelector] = useState(false);
+  const [compareDreams, setCompareDreams] = useState<{ a: Dream; b: Dream } | null>(null);
   
   const { analyzeDream, isLoading: isAnalyzing, result: analysisResult, reset: resetAnalysis } = useDreamAnalysis();
+  const { insight, isLoading: insightLoading, error: insightError, refetch: refetchInsight, isAvailable: insightAvailable } = usePatternInsight(dreams);
 
   const handleDreamSubmit = (text: string) => {
     setDreamText(text);
