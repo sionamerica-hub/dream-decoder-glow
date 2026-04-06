@@ -320,6 +320,7 @@ const Index = () => {
                 comfortMessage={selectedDream.analysis.comfortMessage}
               />
               <DreamChat
+                dreamId={selectedDream.id}
                 dreamContent={selectedDream.content}
                 analysis={selectedDream.analysis}
               />
